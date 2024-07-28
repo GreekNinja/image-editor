@@ -3,218 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📷 Upload, Resize, Convert, Copy, and Paste Image 🌟</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Image Upload, Resize, Convert, Copy, and Paste</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1>📷 Upload, Resize, Convert, Copy, and Paste Image 🌟</h1>
+        <input type="file" id="uploadImage" accept="image/*">
+        <label for="width">Width (px):</label>
+        <input type="number" id="width" value="500">
+        <label for="height">Height (px):</label>
+        <input type="number" id="height" value="500">
+        <label for="format">Convert Image To:</label>
+        <select id="format">
+            <option value="png">PNG</option>
+            <option value="jpeg">JPEG</option>
+            <option value="webp">WEBP</option>
+        </select>
+        <div class="buttons">
+            <button id="downloadImage">Download Image</button>
+            <button id="removeImage">Remove Image</button>
+        </div>
         <div id="progress-bar"><div></div></div>
-        <div class="input-group">
-            <input type="file" id="image-input" accept="image/*">
+        <div class="alert" id="alert"></div>
+        <div class="image-container">
+            <img id="imagePreview" src="" alt="Image Preview">
         </div>
-        <div class="input-group">
-            <label for="width-input">Width (px):</label>
-            <input type="number" id="width-input" min="10" step="10">
-        </div>
-        <div class="input-group">
-            <label for="height-input">Height (px):</label>
-            <input type="number" id="height-input" min="10" step="10">
-        </div>
-        <div class="input-group">
-            <label for="format-select">Convert Image To:</label>
-            <select id="format-select">
-                <option value="image/png">PNG</option>
-                <option value="image/jpeg">JPEG</option>
-                <option value="image/webp">WEBP</option>
-            </select>
-        </div>
-        <button id="download-button">💾 Download Image</button>
-        <img id="uploaded-image" alt="Your uploaded image will appear here.">
     </div>
 
-    <div id="alert" class="alert"></div>
-
-    <script>
-        const imageInput = document.getElementById('image-input');
-        const uploadedImage = document.getElementById('uploaded-image');
-        const widthInput = document.getElementById('width-input');
-        const heightInput = document.getElementById('height-input');
-        const formatSelect = document.getElementById('format-select');
-        const downloadButton = document.getElementById('download-button');
-        const progressBar = document.getElementById('progress-bar');
-        const progress = document.querySelector('#progress-bar div');
-        const alertBox = document.getElementById('alert');
-
-        let originalImage = new Image();
-        let imageUrl = '';
-
-        imageInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadstart = function() {
-                    progressBar.style.display = 'block';
-                    progress.style.width = '0';
-                };
-                reader.onprogress = function(e) {
-                    if (e.lengthComputable) {
-                        const percentLoaded = Math.round((e.loaded / e.total) * 100);
-                        progress.style.width = percentLoaded + '%';
-                    }
-                };
-                reader.onload = function(e) {
-                    imageUrl = e.target.result;
-                    originalImage.src = imageUrl;
-                    uploadedImage.src = imageUrl;
-                    uploadedImage.style.display = 'block';
-
-                    originalImage.onload = () => {
-                        widthInput.value = originalImage.width;
-                        heightInput.value = originalImage.height;
-                        progressBar.style.display = 'none';
-                        showAlert('Image uploaded successfully! 😊', 'success');
-                    };
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        widthInput.addEventListener('input', function() {
-            const width = widthInput.value;
-            uploadedImage.style.width = width + 'px';
-            delayAction(updateImageSize);
-        });
-
-        heightInput.addEventListener('input', function() {
-            const height = heightInput.value;
-            uploadedImage.style.height = height + 'px';
-            delayAction(updateImageSize);
-        });
-
-        let resizeTimeout;
-        function delayAction(action) {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(action, 500);
-        }
-
-        function updateImageSize() {
-            progressBar.style.display = 'block';
-            progress.style.width = '100%';
-            setTimeout(() => {
-                progressBar.style.display = 'none';
-                showAlert('Image resized successfully! ✨', 'success');
-            }, 500);
-        }
-
-        document.addEventListener('paste', async function(event) {
-            const clipboardItems = event.clipboardData.items;
-            for (const item of clipboardItems) {
-                if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        imageUrl = e.target.result;
-                        originalImage.src = imageUrl;
-                        uploadedImage.src = imageUrl;
-                        uploadedImage.style.display = 'block';
-
-                        originalImage.onload = () => {
-                            widthInput.value = originalImage.width;
-                            heightInput.value = originalImage.height;
-                            showAlert('Image pasted successfully! 📋', 'success');
-                        };
-                    };
-                    reader.readAsDataURL(file);
-                }
-            }
-        });
-
-        document.addEventListener('copy', async function(event) {
-            if (uploadedImage.src) {
-                try {
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-
-                    const width = uploadedImage.width;
-                    const height = uploadedImage.height;
-
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    context.drawImage(originalImage, 0, 0, width, height);
-
-                    canvas.toBlob(async function(blob) {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                        showAlert('Image copied to clipboard! 📋', 'success');
-                    }, 'image/png');
-                } catch (err) {
-                    showAlert('Failed to copy image: ' + err, 'error');
-                }
-            } else {
-                showAlert('No image to copy!', 'error');
-            }
-        });
-
-        downloadButton.addEventListener('click', function() {
-            const format = formatSelect.value;
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            const width = parseInt(widthInput.value, 10);
-            const height = parseInt(heightInput.value, 10);
-
-            canvas.width = width;
-            canvas.height = height;
-
-            context.drawImage(originalImage, 0, 0, width, height);
-
-            progressBar.style.display = 'block';
-            progress.style.width = '0';
-
-            canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'converted-image' + getExtension(format);
-                a.click();
-                URL.revokeObjectURL(url);
-
-                let downloadProgress = 0;
-                const downloadInterval = setInterval(() => {
-                    downloadProgress += 10;
-                    progress.style.width = `${downloadProgress}%`;
-                    if (downloadProgress >= 100) {
-                        clearInterval(downloadInterval);
-                        progressBar.style.display = 'none';
-                        showAlert('Image downloaded successfully! 💾', 'success');
-                    }
-                }, 100);
-            }, format);
-        });
-
-        function getExtension(format) {
-            switch (format) {
-                case 'image/png':
-                    return '.png';
-                case 'image/jpeg':
-                    return '.jpg';
-                case 'image/webp':
-                    return '.webp';
-                default:
-                    return '.png';
-            }
-        }
-
-        function showAlert(message, type) {
-            alertBox.textContent = message;
-            alertBox.className = `alert ${type}`;
-            alertBox.style.display = 'block';
-            setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 3000);
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
